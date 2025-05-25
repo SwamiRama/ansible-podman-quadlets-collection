@@ -1,0 +1,36 @@
+---
+galaxy_info:
+  author: GlobalBots Team
+  description: Manage Podman containers using systemd Quadlets
+  company: GlobalBots
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Fedora
+      versions:
+        - "37"
+        - "38"
+        - "39"
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+  galaxy_tags:
+    - podman
+    - containers
+    - systemd
+    - quadlets
+    - cloud
+    - infrastructure
+
+dependencies:
+  - ansible.posix
+  - community.general

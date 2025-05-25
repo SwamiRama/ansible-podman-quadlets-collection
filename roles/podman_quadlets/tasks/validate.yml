@@ -1,0 +1,46 @@
+---
+- name: Validate container definitions
+  ansible.builtin.assert:
+    that:
+      - containers is defined
+      - containers is iterable
+      - containers | length > 0
+    fail_msg: "No containers defined. Please set the 'containers' variable."
+
+- name: Validate required container fields
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.container_image is defined
+      - item.name is match('^[a-zA-Z0-9][a-zA-Z0-9._-]*$')
+    fail_msg: "Container '{{ item.name | default('unnamed') }}' is missing required fields or has invalid name"
+  loop: "{{ containers }}"
+  loop_control:
+    label: "{{ item.name | default('unnamed') }}"
+
+- name: Validate port mappings
+  ansible.builtin.assert:
+    that:
+      - port.host_port is defined
+      - port.container_port is defined
+      - port.host_port | string | regex_search('^[0-9]+$')
+      - port.container_port | string | regex_search('^[0-9]+$')
+    fail_msg: "Invalid port mapping in container '{{ item.name }}'"
+  loop: "{{ containers | subelements('ports', skip_missing=True) }}"
+  loop_control:
+    label: "{{ item.0.name }}: {{ item.1.host_port | default('?') }}:{{ item.1.container_port | default('?') }}"
+  vars:
+    port: "{{ item.1 }}"
+
+- name: Validate volume mappings
+  ansible.builtin.assert:
+    that:
+      - volume.host_path is defined
+      - volume.container_path is defined
+      - volume.container_path is match('^/')
+    fail_msg: "Invalid volume mapping in container '{{ item.name }}'"
+  loop: "{{ containers | subelements('volumes', skip_missing=True) }}"
+  loop_control:
+    label: "{{ item.0.name }}: {{ item.1.host_path | default('?') }}:{{ item.1.container_path | default('?') }}"
+  vars:
+    volume: "{{ item.1 }}"

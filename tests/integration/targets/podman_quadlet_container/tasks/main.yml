@@ -1,0 +1,81 @@
+---
+- name: Run podman_quadlet_container integration tests
+  block:
+    - name: Test - Create simple container
+      community.podman_quadlets.podman_quadlet_container:
+        name: test-nginx
+        image: docker.io/nginx:alpine
+        state: present
+        quadlet_dir: /tmp/quadlets-test
+      register: create_result
+
+    - name: Assert - Container created
+      ansible.builtin.assert:
+        that:
+          - create_result is changed
+          - create_result.quadlet_file is defined
+
+    - name: Test - Idempotency check
+      community.podman_quadlets.podman_quadlet_container:
+        name: test-nginx
+        image: docker.io/nginx:alpine
+        state: present
+        quadlet_dir: /tmp/quadlets-test
+      register: idempotent_result
+
+    - name: Assert - No changes on second run
+      ansible.builtin.assert:
+        that:
+          - idempotent_result is not changed
+
+    - name: Test - Container with full options
+      community.podman_quadlets.podman_quadlet_container:
+        name: test-webapp
+        image: docker.io/nginx:alpine
+        state: present
+        environment:
+          TEST_VAR: "test_value"
+          DEBUG: "true"
+        volumes:
+          - host_path: /tmp/test-data
+            container_path: /data
+        ports:
+          - host_port: "8080"
+            container_port: "80"
+        networks:
+          - test-network
+        labels:
+          test: integration
+          env: ci
+        quadlet_dir: /tmp/quadlets-test
+      register: full_result
+
+    - name: Verify quadlet content
+      ansible.builtin.slurp:
+        src: "{{ full_result.quadlet_file }}"
+      register: quadlet_content
+
+    - name: Assert - All options in quadlet
+      ansible.builtin.assert:
+        that:
+          - "'Environment=TEST_VAR=test_value' in quadlet_content.content | b64decode"
+          - "'PublishPort=8080:80' in quadlet_content.content | b64decode"
+          - "'Network=test-network' in quadlet_content.content | b64decode"
+
+    - name: Test - Remove container
+      community.podman_quadlets.podman_quadlet_container:
+        name: test-nginx
+        state: absent
+        quadlet_dir: /tmp/quadlets-test
+      register: remove_result
+
+    - name: Assert - Container removed
+      ansible.builtin.assert:
+        that:
+          - remove_result is changed
+
+  always:
+    - name: Cleanup test directory
+      ansible.builtin.file:
+        path: /tmp/quadlets-test
+        state: absent

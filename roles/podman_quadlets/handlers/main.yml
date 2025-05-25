@@ -1,0 +1,16 @@
+---
+- name: restart podman services
+  ansible.builtin.systemd:
+    name: "{{ item.container_name }}"
+    state: restarted
+    scope: user
+    daemon_reload: yes
+  loop: "{{ podman_quadlets_containers }}"
+  loop_control:
+    label: "{{ item.container_name }}"
+  when: item.state | default('present') == 'present'
+
+- name: reload systemd user daemon
+  ansible.builtin.systemd:
+    daemon_reload: yes
+    scope: user

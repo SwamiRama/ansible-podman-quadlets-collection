@@ -1,0 +1,37 @@
+---
+- name: Ensure Podman is installed
+  ansible.builtin.package:
+    name: podman
+    state: present
+  become: "{{ ansible_facts['os_family'] != 'Darwin' }}"
+  when: podman_quadlets_install_podman | default(false)
+
+- name: Check Podman version
+  ansible.builtin.command:
+    cmd: podman --version
+  register: podman_version
+  changed_when: false
+
+- name: Verify Podman version supports Quadlets
+  ansible.builtin.assert:
+    that:
+      - podman_version.stdout is search('podman version (4\.[4-9]|[5-9])')
+    fail_msg: "Podman version 4.4+ is required for Quadlets support"
+    success_msg: "Podman version is compatible: {{ podman_version.stdout }}"
+
+- name: Create quadlet directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0750"
+  loop:
+    - "{{ podman_quadlets_base_dir }}"
+    - "{{ podman_quadlets_config_dir }}"
+    - "{{ ansible_user_dir }}/.config/systemd/user"
+
+- name: Enable lingering for user
+  ansible.builtin.command:
+    cmd: "loginctl enable-linger {{ ansible_user_id }}"
+  become: true
+  changed_when: true
+  when: podman_quadlets_enable_linger | default(true)
