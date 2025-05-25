@@ -1,0 +1,81 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Ansible
+*.retry
+.ansible-lint
+
+# Testing
+.tox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+htmlcov/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build artifacts
+*.tar.gz
+build/
+dist/
+
+# Molecule
+molecule/*/.molecule/
+molecule/*/tests/__pycache__/
+
+# Documentation
+docs/_build/
+docs/build/
+site/
+
+# Credentials and secrets
+**/vault.yml
+**/secrets.yml
+**/*vault*
+.env
+
+# Temporary files
+*.tmp
+*.bak
+*.log

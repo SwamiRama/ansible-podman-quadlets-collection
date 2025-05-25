@@ -1,0 +1,28 @@
+---
+- name: Stop removed containers
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    scope: user
+  loop: "{{ _removed_containers | default([]) }}"
+  when: podman_quadlets_cleanup_on_failure | bool
+
+- name: Remove orphaned quadlet files
+  when: podman_quadlets_remove_orphans | bool
+  block:
+    - name: Find existing quadlet files
+      ansible.builtin.find:
+        paths: "{{ podman_quadlets_base_dir }}"
+        patterns: "*.container,*.network,*.volume"
+      register: _existing_quadlets
+
+    - name: Identify orphaned files
+      ansible.builtin.set_fact:
+        _orphaned_files: "{{ _existing_quadlets.files | map(attribute='path') | difference(_managed_quadlets | default([])) }}"
+
+    - name: Remove orphaned quadlet files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ _orphaned_files }}"
+      when: _orphaned_files | length > 0

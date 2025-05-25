@@ -163,11 +163,34 @@ class PodmanQuadletBase:
         if 'driver' in config:
             lines.append(f"Driver={config['driver']}")
         
+        if 'subnet' in config:
+            lines.append(f"Subnet={config['subnet']}")
+        
+        if 'gateway' in config:
+            lines.append(f"Gateway={config['gateway']}")
+        
+        if 'ip_range' in config:
+            lines.append(f"IPRange={config['ip_range']}")
+        
+        if 'ipv6' in config and config['ipv6']:
+            lines.append("IPv6=true")
+        
+        if 'internal' in config and config['internal']:
+            lines.append("Internal=true")
+        
+        if 'disable_dns' in config and config['disable_dns']:
+            lines.append("DisableDNS=true")
+        
         if 'options' in config:
             for key, value in config['options'].items():
                 lines.append(f"Options={key}={value}")
         
+        if 'labels' in config and config['labels']:
+            for key, value in config['labels'].items():
+                lines.append(f"Label={key}={value}")
+        
         return lines
+
     
     def _generate_volume_config(self, config):
         """Generate volume-specific configuration."""
@@ -175,6 +198,22 @@ class PodmanQuadletBase:
         
         if 'driver' in config:
             lines.append(f"Driver={config['driver']}")
+        
+        if 'device' in config:
+            lines.append(f"Device={config['device']}")
+        
+        if 'type' in config:
+            lines.append(f"Type={config['type']}")
+        
+        if 'mount_options' in config:
+            lines.append(f"Options={config['mount_options']}")
+        
+        if 'copy' in config and not config['copy']:
+            lines.append("Copy=false")
+        
+        if 'labels' in config and config['labels']:
+            for key, value in config['labels'].items():
+                lines.append(f"Label={key}={value}")
         
         if 'options' in config:
             for key, value in config['options'].items():

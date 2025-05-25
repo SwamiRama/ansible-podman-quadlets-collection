@@ -1,0 +1,110 @@
+[Unit]
+Description={{ container.service_description | default(container.container_name + " Container") }}
+{% if container.required_services is defined %}
+Requires={{ container.required_services }}
+{% endif %}
+{% if container.after_services is defined %}
+After={{ container.after_services }}
+{% endif %}
+
+[Container]
+Image={{ container.container_image }}
+ContainerName={{ container.container_name }}
+{% if container.auto_update is defined %}
+AutoUpdate={{ container.auto_update }}
+{% endif %}
+
+{% for key, value in (container.environment_variables | default({}) | combine(podman_quadlets_common_env)).items() %}
+Environment={{ key }}={{ value }}
+{% endfor %}
+
+{% for volume in container.volumes | default([]) %}
+Volume={{ volume.host_path }}:{{ volume.container_path }}{% if volume.options is defined %}:{{ volume.options }}{% endif %}
+{% endfor %}
+
+{% for network in container.networks | default([podman_quadlets_default_network]) %}
+Network={{ network }}
+{% endfor %}
+
+{% for port in container.ports | default([]) %}
+PublishPort={{ port.host_port }}:{{ port.container_port }}{% if port.protocol is defined %}/{{ port.protocol }}{% endif %}
+{% endfor %}
+
+{% for key, value in (container.labels | default({}) | combine(podman_quadlets_common_labels)).items() %}
+Label={{ key }}={{ value }}
+{% endfor %}
+
+{% for name, target in container.secrets | default({}).items() %}
+Secret={{ name }},type=env,target={{ target }}
+{% endfor %}
+
+{% if container.user is defined %}
+User={{ container.user }}
+{% endif %}
+
+{% if container.userns is defined %}
+UserNS={{ container.userns }}
+{% endif %}
+
+{% if container.working_dir is defined %}
+WorkingDir={{ container.working_dir }}
+{% endif %}
+
+{% if container.health_cmd is defined %}
+HealthCmd={{ container.health_cmd }}
+{% endif %}
+
+{% if container.health_interval is defined %}
+HealthInterval={{ container.health_interval }}
+{% endif %}
+
+{% if container.health_retries is defined %}
+HealthRetries={{ container.health_retries }}
+{% endif %}
+
+{% if container.health_timeout is defined %}
+HealthTimeout={{ container.health_timeout }}
+{% endif %}
+
+{% if container.health_start_period is defined %}
+HealthStartPeriod={{ container.health_start_period }}
+{% endif %}
+
+{% if podman_quadlets_log_driver is defined %}
+LogDriver={{ podman_quadlets_log_driver }}
+{% endif %}
+
+{% if container.entrypoint is defined %}
+Entrypoint={{ container.entrypoint }}
+{% endif %}
+
+{% if container.cmd is defined %}
+Exec={{ container.cmd }}
+{% endif %}
+
+{% if container.timezone is defined %}
+Timezone={{ container.timezone }}
+{% elif podman_quadlets_timezone is defined %}
+Timezone={{ podman_quadlets_timezone }}
+{% endif %}
+
+{% if podman_quadlets_enable_security_opts | bool %}
+{% if podman_quadlets_security_opts.no_new_privileges is defined %}
+NoNewPrivileges={{ podman_quadlets_security_opts.no_new_privileges | lower }}
+{% endif %}
+{% endif %}
+
+[Service]
+Restart={{ container.restart_policy | default(podman_quadlets_default_restart_policy) }}
+{% if container.restart_sec is defined %}
+RestartSec={{ container.restart_sec }}
+{% endif %}
+{% if container.start_limit_interval is defined %}
+StartLimitInterval={{ container.start_limit_interval }}
+{% endif %}
+{% if container.start_limit_burst is defined %}
+StartLimitBurst={{ container.start_limit_burst }}
+{% endif %}
+
+[Install]
+WantedBy=default.target

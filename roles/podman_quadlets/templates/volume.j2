@@ -1,0 +1,28 @@
+[Unit]
+Description={{ volume_name }} Volume
+
+[Volume]
+{% if driver is defined %}
+Driver={{ driver }}
+{% endif %}
+{% if device is defined %}
+Device={{ device }}
+{% endif %}
+{% if type is defined %}
+Type={{ type }}
+{% endif %}
+{% if options is defined %}
+Options={{ options }}
+{% endif %}
+{% if copy is defined and not copy %}
+Copy=false
+{% endif %}
+{% for key, value in labels | default({}).items() %}
+Label={{ key }}={{ value }}
+{% endfor %}
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

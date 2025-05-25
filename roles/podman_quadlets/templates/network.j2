@@ -1,0 +1,34 @@
+[Unit]
+Description={{ network_name }} Network
+
+[Network]
+{% if subnet is defined %}
+Subnet={{ subnet }}
+{% endif %}
+{% if gateway is defined %}
+Gateway={{ gateway }}
+{% endif %}
+{% if driver is defined %}
+Driver={{ driver }}
+{% endif %}
+{% if internal | default(false) %}
+Internal=true
+{% endif %}
+{% if ipv6 | default(false) %}
+IPv6=true
+{% endif %}
+{% if disable_dns | default(false) %}
+DisableDNS=true
+{% endif %}
+{% for key, value in labels | default({}).items() %}
+Label={{ key }}={{ value }}
+{% endfor %}
+{% for key, value in options | default({}).items() %}
+Options={{ key }}={{ value }}
+{% endfor %}
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

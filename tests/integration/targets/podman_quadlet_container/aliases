@@ -1,0 +1,3 @@
+needs/root
+needs/docker
+disabled  # Remove this line when tests are ready
