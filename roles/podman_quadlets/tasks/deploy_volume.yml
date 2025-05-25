@@ -1,0 +1,39 @@
+---
+- name: Set volume facts
+  ansible.builtin.set_fact:
+    _volume_name: "{{ volume | regex_replace('\\.volume$', '') }}"
+
+- name: Check if volume already exists
+  ansible.builtin.command:
+    cmd: "podman volume exists {{ _volume_name }}"
+  register: _volume_exists
+  changed_when: false
+  failed_when: false
+
+- name: Deploy volume quadlet
+  community.podman_quadlets.podman_quadlet_volume:
+    name: "{{ _volume_name }}"
+    state: present
+    driver: "{{ podman_quadlets_volumes[_volume_name].driver | default('local') }}"
+    labels: "{{ podman_quadlets_volumes[_volume_name].labels | default({}) | combine(podman_quadlets_common_labels) }}"
+    options: "{{ podman_quadlets_volumes[_volume_name].options | default({}) }}"
+    quadlet_dir: "{{ podman_quadlets_base_dir }}"
+  when:
+    - _volume_exists.rc != 0 or podman_quadlets_volumes[_volume_name] is defined
+  register: _volume_result
+
+- name: Set volume permissions
+  ansible.builtin.file:
+    path: "/var/lib/containers/storage/volumes/{{ _volume_name }}/_data"
+    mode: "{{ podman_quadlets_volume_permissions }}"
+    state: directory
+  when:
+    - _volume_result.changed
+    - podman_quadlets_volumes[_volume_name].permissions is defined
+  become: true
+
+- name: Log volume creation
+  ansible.builtin.debug:
+    msg: "Volume '{{ _volume_name }}' {{ 'created' if _volume_result.changed else 'already exists' }}"
+    verbosity: 1
+  when: _volume_result is defined

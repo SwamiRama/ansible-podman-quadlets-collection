@@ -1,0 +1,33 @@
+---
+- name: Set network facts
+  ansible.builtin.set_fact:
+    _network_name: "{{ network | regex_replace('\\.network$', '') }}"
+
+- name: Check if network already exists
+  ansible.builtin.command:
+    cmd: "podman network exists {{ _network_name }}"
+  register: _network_exists
+  changed_when: false
+  failed_when: false
+
+- name: Deploy network quadlet
+  community.podman_quadlets.podman_quadlet_network:
+    name: "{{ _network_name }}"
+    state: present
+    driver: "{{ podman_quadlets_network_driver }}"
+    subnet: "{{ podman_quadlets_networks[_network_name].subnet | default(omit) }}"
+    gateway: "{{ podman_quadlets_networks[_network_name].gateway | default(omit) }}"
+    internal: "{{ podman_quadlets_networks[_network_name].internal | default(false) }}"
+    ipv6: "{{ podman_quadlets_networks[_network_name].ipv6 | default(false) }}"
+    labels: "{{ podman_quadlets_networks[_network_name].labels | default({}) | combine(podman_quadlets_common_labels) }}"
+    options: "{{ podman_quadlets_networks[_network_name].options | default({}) }}"
+    quadlet_dir: "{{ podman_quadlets_base_dir }}"
+  when:
+    - _network_exists.rc != 0 or podman_quadlets_networks[_network_name] is defined
+  register: _network_result
+
+- name: Log network creation
+  ansible.builtin.debug:
+    msg: "Network '{{ _network_name }}' {{ 'created' if _network_result.changed else 'already exists' }}"
+    verbosity: 1
+  when: _network_result is defined

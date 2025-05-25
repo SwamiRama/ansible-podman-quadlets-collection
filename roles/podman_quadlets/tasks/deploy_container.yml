@@ -1,0 +1,69 @@
+---
+- name: Set container facts
+  ansible.builtin.set_fact:
+    _container_name: "{{ container.container_name | default(container.name | regex_replace('\\.container$', '')) }}"
+    _quadlet_file: "{{ podman_quadlets_base_dir }}/{{ container.name }}"
+
+- name: Validate container image
+  when:
+    - podman_quadlets_validate_images | bool
+    - container.state | default('present') == 'present'
+  block:
+    - name: Check if image exists locally
+      ansible.builtin.command:
+        cmd: "podman image exists {{ container.container_image }}"
+      register: _image_exists
+      changed_when: false
+      failed_when: false
+
+    - name: Pull container image if not present
+      ansible.builtin.command:
+        cmd: "podman pull {{ container.container_image }}"
+      when: _image_exists.rc != 0
+      register: _image_pull
+      changed_when: _image_pull.rc == 0
+
+- name: Deploy container quadlet
+  community.podman_quadlets.podman_quadlet_container:
+    name: "{{ _container_name }}"
+    state: "{{ container.state | default('present') }}"
+    image: "{{ container.container_image }}"
+    environment: "{{ container.environment_variables | default({}) | combine(podman_quadlets_common_env) }}"
+    volumes: "{{ container.volumes | default([]) }}"
+    networks: "{{ container.networks | default([podman_quadlets_default_network]) }}"
+    labels: "{{ container.labels | default({}) | combine(podman_quadlets_common_labels) }}"
+    ports: "{{ container.ports | default([]) }}"
+    secrets: "{{ container.secrets | default({}) }}"
+    auto_update: "{{ container.auto_update | default(podman_quadlets_auto_update) }}"
+    restart_policy: "{{ container.restart_policy | default(podman_quadlets_default_restart_policy) }}"
+    quadlet_dir: "{{ podman_quadlets_base_dir }}"
+  register: _container_result
+
+- name: Set container deployment results
+  ansible.builtin.set_fact:
+    _container_results: "{{ _container_results | default([]) + [_container_result] }}"
+  when: _container_result is defined
+
+- name: Handle container security options
+  when:
+    - podman_quadlets_enable_security_opts | bool
+    - container.state | default('present') == 'present'
+    - _container_result.changed
+  ansible.builtin.lineinfile:
+    path: "{{ _quadlet_file }}"
+    line: "SecurityLabelDisable={{ 'false' if container.security_label | default(true) else 'true' }}"
+    insertafter: '^\[Container\]'
+    state: present
+
+- name: Add custom container options
+  when:
+    - container.custom_options is defined
+    - container.state | default('present') == 'present'
+  ansible.builtin.lineinfile:
+    path: "{{ _quadlet_file }}"
+    line: "{{ item.key }}={{ item.value }}"
+    insertafter: '^\[Container\]'
+    state: present
+  loop: "{{ container.custom_options | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
