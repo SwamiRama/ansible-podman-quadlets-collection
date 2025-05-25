@@ -1,0 +1,43 @@
+---
+namespace: community
+name: podman_quadlets
+version: 1.0.0
+readme: README.md
+authors:
+  - Manuel <manuel@globalbots.net>
+  - Your Team <team@globalbots.net>
+description: Ansible Collection for managing Podman containers using Quadlets (systemd integration)
+license:
+  - MIT
+license_file: LICENSE
+tags:
+  - podman
+  - containers
+  - systemd
+  - quadlets
+  - cloud
+  - linux
+  - infrastructure
+dependencies:
+  ansible.posix: ">=1.5.0"
+  community.general: ">=7.0.0"
+  containers.podman: ">=1.10.0"
+repository: https://github.com/globalbots/ansible-podman-quadlets
+documentation: https://github.com/globalbots/ansible-podman-quadlets/wiki
+homepage: https://github.com/globalbots/ansible-podman-quadlets
+issues: https://github.com/globalbots/ansible-podman-quadlets/issues
+build_ignore:
+  - .DS_Store
+  - .git
+  - .github
+  - .gitignore
+  - .idea
+  - .vscode
+  - '*.pyc'
+  - '*.retry'
+  - '.ansible-lint'
+  - '.yamllint'
+  - 'molecule/'
+  - 'tests/'
+  - 'tox.ini'
+  - 'Makefile'

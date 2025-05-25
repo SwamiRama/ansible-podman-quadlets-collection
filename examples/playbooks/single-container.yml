@@ -1,0 +1,45 @@
+---
+- name: Deploy single container with Quadlets
+  hosts: container_hosts
+  become: false
+  gather_facts: true
+  
+  vars:
+    project_name: nginx-example
+    containers:
+      - name: nginx.container
+        service_description: "Nginx Web Server"
+        container_image: "docker.io/nginx:alpine"
+        container_name: "nginx"
+        environment_variables:
+          NGINX_PORT: "80"
+        ports:
+          - host_port: "8080"
+            container_port: "80"
+        volumes:
+          - host_path: "nginx-config.volume"
+            container_path: "/etc/nginx/conf.d"
+          - host_path: "nginx-data.volume"
+            container_path: "/usr/share/nginx/html"
+        labels:
+          app: "nginx"
+          environment: "production"
+          managed_by: "ansible"
+        networks:
+          - "web.network"
+        auto_update: "registry"
+
+  tasks:
+    - name: Deploy Nginx container
+      ansible.builtin.include_role:
+        name: community.podman_quadlets.podman_quadlets
+
+    - name: Check container status
+      ansible.builtin.systemd:
+        name: nginx
+        scope: user
+      register: nginx_status
+
+    - name: Display container status
+      ansible.builtin.debug:
+        var: nginx_status.status.ActiveState

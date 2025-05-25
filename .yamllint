@@ -1,0 +1,38 @@
+---
+extends: default
+rules:
+  line-length:
+    max: 120
+    level: warning
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+  comments:
+    require-starting-space: true
+    min-spaces-from-content: 1
+  comments-indentation: enable
+  document-start: enable
+  empty-lines:
+    max: 2
+  indentation:
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+  key-duplicates: enable
+  new-line-at-end-of-file: enable
+  new-lines:
+    type: unix
+  quoted-strings:
+    quote-type: any
+    required: only-when-needed
+  trailing-spaces: enable
+  truthy:
+    allowed-values: ['true', 'false']
+ignore: |
+  .tox/
+  .cache/
+  .github/
+  molecule/

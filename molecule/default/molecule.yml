@@ -1,0 +1,68 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: molecule/shared/requirements.yml
+driver:
+  name: docker
+platforms:
+  - name: instance-ubuntu
+    image: ubuntu:22.04
+    pre_build_image: false
+    privileged: true
+    command: /sbin/init
+    cgroupns_mode: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - /var/lib/containers
+  - name: instance-rhel
+    image: registry.access.redhat.com/ubi8/ubi-init:latest
+    pre_build_image: true
+    privileged: true
+    command: /sbin/init
+    cgroupns_mode: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - /var/lib/containers
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      interpreter_python: auto_silent
+      callback_whitelist: profile_tasks, timer, yaml
+  inventory:
+    group_vars:
+      all:
+        podman_quadlets_project_name: molecule_test
+        containers:
+          - name: test-nginx.container
+            service_description: "Test Nginx Container"
+            container_image: "docker.io/nginx:alpine"
+            container_name: "test-nginx"
+            ports:
+              - host_port: "8080"
+                container_port: "80"
+            labels:
+              test: "molecule"
+            networks:
+              - "test.network"
+  lint:
+    name: ansible-lint
+scenario:
+  name: default
+  test_sequence:
+    - dependency
+    - lint
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - cleanup
+    - destroy
+verifier:
+  name: ansible

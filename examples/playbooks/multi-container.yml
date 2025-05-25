@@ -1,0 +1,87 @@
+---
+- name: Deploy WordPress with MariaDB using Quadlets
+  hosts: container_hosts
+  become: false
+  gather_facts: true
+  
+  vars:
+    project_name: wordpress
+    containers:
+      - name: wordpress-mariadb.container
+        service_description: "WordPress MariaDB Database"
+        container_image: "docker.io/library/mariadb:11"
+        container_name: "wordpress-mariadb"
+        volumes:
+          - host_path: "wordpress-db.volume"
+            container_path: "/var/lib/mysql"
+        secrets:
+          wordpress-db-password: MARIADB_PASSWORD
+          wordpress-db-root-password: MARIADB_ROOT_PASSWORD
+        environment_variables:
+          MARIADB_DATABASE: "wordpress"
+          MARIADB_USER: "wordpress"
+        networks:
+          - "wordpress.network"
+        labels:
+          app: "wordpress"
+          component: "database"
+
+      - name: wordpress.container
+        service_description: "WordPress Application"
+        container_image: "docker.io/library/wordpress:latest"
+        container_name: "wordpress"
+        required_services: "wordpress-mariadb.service"
+        after_services: "wordpress-mariadb.service"
+        volumes:
+          - host_path: "wordpress-data.volume"
+            container_path: "/var/www/html"
+        secrets:
+          wordpress-db-password: WORDPRESS_DB_PASSWORD
+        environment_variables:
+          WORDPRESS_DB_HOST: "wordpress-mariadb"
+          WORDPRESS_DB_USER: "wordpress"
+          WORDPRESS_DB_NAME: "wordpress"
+        ports:
+          - host_port: "8080"
+            container_port: "80"
+        networks:
+          - "wordpress.network"
+        labels:
+          app: "wordpress"
+          component: "application"
+          traefik.enable: "true"
+          traefik.http.routers.wordpress.rule: "Host(`wordpress.example.com`)"
+          traefik.http.services.wordpress.loadbalancer.server.port: "80"
+
+  pre_tasks:
+    - name: Create secrets
+      community.podman_quadlets.podman_quadlet_secret:
+        name: "{{ item.name }}"
+        data: "{{ item.data }}"
+        state: present
+      loop:
+        - name: wordpress-db-password
+          data: "{{ vault_wordpress_db_password }}"
+        - name: wordpress-db-root-password
+          data: "{{ vault_wordpress_db_root_password }}"
+      no_log: true
+
+  roles:
+    - community.podman_quadlets.podman_quadlets
+
+  post_tasks:
+    - name: Wait for MariaDB to be ready
+      ansible.builtin.wait_for:
+        port: 3306
+        host: localhost
+        delay: 10
+        timeout: 60
+
+    - name: Check WordPress accessibility
+      ansible.builtin.uri:
+        url: "http://localhost:8080"
+        status_code: [200, 302]
+      register: wordpress_check
+      retries: 5
+      delay: 10
+      until: wordpress_check is succeeded

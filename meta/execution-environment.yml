@@ -1,0 +1,11 @@
+---
+version: 1
+dependencies:
+  galaxy: requirements.yml
+  python: requirements.txt
+  system: |
+    podman
+    systemd
+additional_build_steps:
+  append:
+    - RUN pip3 install --upgrade pip setuptools

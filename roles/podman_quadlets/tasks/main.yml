@@ -1,0 +1,46 @@
+---
+- name: Include validation tasks
+  ansible.builtin.include_tasks: validate.yml
+  when: podman_quadlets_validate_config | bool
+
+- name: Include preparation tasks
+  ansible.builtin.include_tasks: prepare.yml
+
+- name: Deploy quadlet files
+  ansible.builtin.include_tasks: deploy_container.yml
+  loop: "{{ podman_quadlets_containers }}"
+  loop_control:
+    loop_var: container
+    label: "{{ container.name }}"
+
+- name: Create volumes if defined
+  ansible.builtin.include_tasks: deploy_volume.yml
+  loop: "{{ podman_quadlets_containers | community.podman_quadlets.extract_volumes }}"
+  loop_control:
+    loop_var: volume
+  when: podman_quadlets_create_volumes | bool
+
+- name: Create networks if defined
+  ansible.builtin.include_tasks: deploy_network.yml
+  loop: "{{ podman_quadlets_containers | community.podman_quadlets.extract_networks }}"
+  loop_control:
+    loop_var: network
+  when: podman_quadlets_create_networks | bool
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: yes
+    scope: user
+  when: podman_quadlets_reload_systemd | bool
+  notify: restart podman services
+
+- name: Manage container services
+  ansible.builtin.systemd:
+    name: "{{ item.container_name }}"
+    state: "{{ podman_quadlets_service_state }}"
+    enabled: "{{ podman_quadlets_service_enabled }}"
+    scope: user
+  loop: "{{ podman_quadlets_containers }}"
+  loop_control:
+    label: "{{ item.container_name }}"
+  when: podman_quadlets_service_state is defined

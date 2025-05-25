@@ -1,0 +1,26 @@
+---
+exclude_paths:
+  - .cache/
+  - .github/
+  - molecule/
+  - tests/
+profile: production
+strict: true
+offline: false
+rules:
+  - yaml[line-length]
+skip_list:
+  - galaxy[no-changelog]
+  - name[casing]
+warn_list:
+  - experimental
+  - role-name
+  - schema[meta]
+mock_modules:
+  - community.podman_quadlets.podman_quadlet_container
+  - community.podman_quadlets.podman_quadlet_network
+  - community.podman_quadlets.podman_quadlet_volume
+  - community.podman_quadlets.podman_quadlet_secret
+mock_roles:
+  - community.podman_quadlets.podman_quadlets
+  - community.podman_quadlets.podman_setup

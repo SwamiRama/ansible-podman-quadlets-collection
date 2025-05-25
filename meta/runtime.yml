@@ -1,0 +1,11 @@
+---
+requires_ansible: ">=2.14.0"
+plugin_routing:
+  modules:
+    podman_quadlet:
+      redirect: community.podman_quadlets.podman_quadlet_container
+      deprecation:
+        warning_text: >
+          The podman_quadlet module has been renamed to podman_quadlet_container.
+          Please update your playbooks.
+        removal_version: 2.0.0

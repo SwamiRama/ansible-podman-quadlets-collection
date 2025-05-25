@@ -1,0 +1,50 @@
+---
+# Podman Quadlets Configuration
+podman_quadlets_base_dir: "{{ ansible_user_dir }}/.config/containers/systemd"
+podman_quadlets_config_dir: "{{ ansible_user_dir }}/.config/containers"
+
+# Project Configuration
+podman_quadlets_project_name: "{{ project_name | mandatory }}"
+podman_quadlets_containers: "{{ containers | default([]) }}"
+
+# Service Management
+podman_quadlets_service_state: "started"
+podman_quadlets_service_enabled: true
+podman_quadlets_reload_systemd: true
+
+# Container Defaults
+podman_quadlets_default_network: "internal.network"
+podman_quadlets_default_restart_policy: "always"
+podman_quadlets_auto_update: "registry"
+
+# Security Defaults
+podman_quadlets_enable_security_opts: true
+podman_quadlets_security_opts:
+  no_new_privileges: true
+
+# Volume Management
+podman_quadlets_create_volumes: true
+podman_quadlets_volume_permissions: "0750"
+
+# Network Management
+podman_quadlets_create_networks: true
+podman_quadlets_network_driver: "bridge"
+
+# Cleanup Options
+podman_quadlets_cleanup_on_failure: false
+podman_quadlets_remove_orphans: false
+
+# Validation
+podman_quadlets_validate_images: true
+podman_quadlets_validate_config: true
+
+# Logging
+podman_quadlets_log_level: "info"
+podman_quadlets_log_driver: "journald"
+
+# Labels
+podman_quadlets_common_labels: {}
+
+# Environment
+podman_quadlets_common_env: {}
+podman_quadlets_timezone: "{{ default_timezone | default('UTC') }}"
